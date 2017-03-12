@@ -1,0 +1,5 @@
+# TOML config file
+[config]
+appId = "office-app"
+devId = "office-hq"
+accessKey = "ttn-account-v2.OfuuW9smtu33PjpPtVAs54Bmc2dcgHEOywtuAT1oqzk"

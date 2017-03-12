@@ -15,15 +15,25 @@ import (
 	"github.com/TheThingsNetwork/go-utils/log/apex"
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/spf13/viper"
 	"fmt"
+	"os"
 )
 
 func main() {
 	ctx := apex.Stdout().WithField("Test", "Go Client")
 	log.Set(ctx)
 
-	accessKey := "ttn-account-v2.OfuuW9smtu33PjpPtVAs54Bmc2dcgHEOywtuAT1oqzk"
-	appId, devId := "office-app", "office-hq"
+	viper.SetConfigName("config")
+	viper.AddConfigPath(".")
+	err := viper.ReadInConfig()
+	if err != nil {
+		fmt.Println("Config file not found...")
+		os.Exit(1)
+	}
+	appId := viper.GetString("config.appId")
+	devId := viper.GetString("config.devId")
+	accessKey := viper.GetString("config.accessKey")
 	client := mqtt.NewClient(ctx, "ttnctl", appId, accessKey, "tcp://eu.thethings.network:1883")
 	if err := client.Connect(); err != nil {
 		ctx.WithError(err).Fatal("Could not connect")
