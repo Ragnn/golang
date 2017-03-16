@@ -5,7 +5,7 @@
 // Login   <stanley.stephens@epitech.eu>
 //
 // Started on  Fri Mar 10 23:43:37 2017 Stanley Stephens
-// Last update Sun Mar 12 13:05:12 2017 Stanley Stephens
+// Last update Sat Mar 11 22:05:12 2017 Stanley Stephens
 //
 
 package main
@@ -18,6 +18,8 @@ import (
 	"github.com/spf13/viper"
 	"fmt"
 	"os"
+	"strings"
+	"net/http"
 )
 
 func main() {
@@ -26,8 +28,7 @@ func main() {
 
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
-	err := viper.ReadInConfig()
-	if err != nil {
+	if err := viper.ReadInConfig(); err != nil {
 		fmt.Println("Config file not found...")
 		os.Exit(1)
 	}
@@ -39,6 +40,27 @@ func main() {
 		ctx.WithError(err).Fatal("Could not connect")
 	}
 	token := client.SubscribeDeviceUplink(appId, devId, func(client mqtt.Client, appID string, devID string, req types.UplinkMessage) {
+
+		// "My First Msg" should be change with the data in req.Metadata
+		reader := strings.NewReader(`{"data": "My First Msg"}`)
+
+		// <CLIENT ID> and <PWD> are logins for devices in opensensors.io
+		// <TOPIC ID> find in the "topics" section in opensensors.io
+		request, err := http.NewRequest("POST", "https://realtime.opensensors.io/v1/topics/<TOPIC ID>?client-id=<CLIENT ID>&password=<PWD>", reader)
+
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not do request")
+		}
+		http.Header.Add("Content-Type", "application/json")
+		http.Header.Add("Accept", "application/json")
+		// <API KEY> is find in the profile page
+		http.Header.Add("Authorization", "api-key <API KEY>")
+		Client := &http.Client{}
+		resp, err := Client.Do(request)
+		resp = resp
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not get response")
+		}
 	})
 	token.Wait()
 
