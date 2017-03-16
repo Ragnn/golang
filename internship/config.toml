@@ -1,5 +1,20 @@
 # TOML config file
-[config]
+[subscribing]
 appId = "office-app"
 devId = "office-hq"
 accessKey = "ttn-account-v2.OfuuW9smtu33PjpPtVAs54Bmc2dcgHEOywtuAT1oqzk"
+
+[posting]
+# clientId found in "Devices" section
+clientId = ""
+
+# password set at the creation of the device
+password = ""
+
+# topicId in "Topics" section
+# e.g: topicId = "/users/stan/test"
+topicId = ""
+
+# apiKey found in profile page
+# e.g: apiKey = /users/stan/test
+apiKey = ""

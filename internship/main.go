@@ -32,31 +32,41 @@ func main() {
 		fmt.Println("Config file not found...")
 		os.Exit(1)
 	}
-	appId := viper.GetString("config.appId")
-	devId := viper.GetString("config.devId")
-	accessKey := viper.GetString("config.accessKey")
+	appId := viper.GetString("subscribing.appId")
+	devId := viper.GetString("subscribing.devId")
+	accessKey := viper.GetString("subscribing.accessKey")
 	client := mqtt.NewClient(ctx, "ttnctl", appId, accessKey, "tcp://eu.thethings.network:1883")
 	if err := client.Connect(); err != nil {
 		ctx.WithError(err).Fatal("Could not connect")
 	}
 	token := client.SubscribeDeviceUplink(appId, devId, func(client mqtt.Client, appID string, devID string, req types.UplinkMessage) {
 
-		// "My First Msg" should be change with the data in req.Metadata
-		reader := strings.NewReader(`{"data": "My First Msg"}`)
+		metadata := fmt.Sprintf("Frequency: %g\n", req.Metadata.Frequency)
+		metadata += fmt.Sprintf("Modulation: %s\n", req.Metadata.Modulation)
+		metadata += fmt.Sprintf("DataRate: %s\n", req.Metadata.DataRate)
+		metadata += fmt.Sprintf("Bitrate: %d\n", req.Metadata.Bitrate)
+		metadata += fmt.Sprintf("CodingRate: %s\n", req.Metadata.CodingRate)
+		metadata += fmt.Sprintf("Location Lat/Long/Alt: %g/%g/%d\n",
+					req.Metadata.LocationMetadata.Latitude,
+					req.Metadata.LocationMetadata.Longitude,
+					req.Metadata.LocationMetadata.Altitude)
 
-		// <CLIENT ID> and <PWD> are logins for devices in opensensors.io
-		// <TOPIC ID> find in the "topics" section in opensensors.io
-		request, err := http.NewRequest("POST", "https://realtime.opensensors.io/v1/topics/<TOPIC ID>?client-id=<CLIENT ID>&password=<PWD>", reader)
+		reader := strings.NewReader(`{"data": "` + metadata + `"}`)
 
+		clientId := viper.GetString("posting.clientId")
+		password := viper.GetString("posting.password")
+		topicId := viper.GetString("posting.topicId")
+		apiKey := viper.GetString("posting.apiKey")
+
+		url := "https://realtime.opensensors.io/v1/topics/" + topicId + "?client-id=" + clientId + "&password=" + password
+		request, err := http.NewRequest("POST", url, reader)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not do request")
 		}
-		http.Header.Add("Content-Type", "application/json")
-		http.Header.Add("Accept", "application/json")
-		// <API KEY> is find in the profile page
-		http.Header.Add("Authorization", "api-key <API KEY>")
-		Client := &http.Client{}
-		resp, err := Client.Do(request)
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Accept", "application/json")
+		request.Header.Set("Authorization", "api-key " + apiKey)
+		resp, err := http.DefaultClient.Do(request)
 		resp = resp
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not get response")
